@@ -4,10 +4,9 @@
 """Entry point for the trading card game."""
 
 from __future__ import annotations
-from gamefield import Gamefield, Minion
+from gamefield import Game
 from minions.footman import FootManMinion
 
-import sys
 
 
 def main() -> int:
@@ -15,12 +14,13 @@ def main() -> int:
     print("Welcome to the Trading Card Game!")
     print("Game starting...")
 
-    gamefield = Gamefield()
+    game = Game(lambda player: print(f"Player {player.name} wins!"))
     testMinion = FootManMinion()
-    gamefield.add_minion(testMinion)
-    testMinion.calculateDamage(20, gamefield);
-    for minion in gamefield.minions:
-        print(f"{minion.name}: HP {minion.currentHp}")
+    game.gamefield.add_minion(game.player1, testMinion)
+    testMinion.calculateDamage(5, game.gamefield);
+    for minions in game.gamefield.minions.values():
+        for minion in minions:
+            print(f"{minion.name}: HP {minion.currentHp}")
 
 
     return 0

@@ -1,6 +1,7 @@
 
 """Game state container for a trading card game."""
 from __future__ import annotations
+from typing import Callable
 
 
 class Minion:
@@ -18,49 +19,52 @@ class Minion:
     def removeSelf(self, gamefield: Gamefield) -> None:
         gamefield.remove_minion(self)
 
+class Player:
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self._maxHp = 20
+        self.currentHp = 20
+
+    def calculate_damage(self, damage: int, game: Game):
+        self.currentHp -= damage
+        if (self.currentHp <= 0):
+            game.declare_loser(self)
+
+class Game:
+    def __init__(self, on_win: Callable[[Player], None]) -> None:
+        self.players = [Player("1"), Player("2")]
+        self.gamefield = Gamefield(self.players[0], self.players[1])
+        self.is_over = False
+        self._on_win = on_win
+
+    @property
+    def player1(self):
+        return self.players[0]
+
+    @property
+    def player2(self):
+        return self.players[1]
+    
+    def declare_loser(self, player: Player):
+        winner = next((x for x in self.players if x != player))
+        self.declare_winner(winner)
+
+    def declare_winner(self, player: Player):
+        self.is_over = True
+        self._on_win(player)
+
+
 class Gamefield:
-    """Store and update the players, cards, and turn state of a game."""
+    def __init__(self, player1: Player, player2: Player):
+        self.minions: dict[Player, list[Minion]] = {player1: [], player2: []}
 
-    def __init__(self, players=None, cards=None):
-        self._players = list(players or ())
-        self._current_player_index = 0
-        self._turn_number = 1 if self._players else 0
-        self.minions: list[Minion] = []
-
-    @property
-    def players(self):
-        """Players in the game, in turn order."""
-        return tuple(self._players)
-
-    @property
-    def current_player(self):
-        """The player whose turn it is, or None when unavailable."""
-        if self._is_over or not self._players:
-            return None
-        return self._players[self._current_player_index]
-
-    @property
-    def turn_number(self):
-        return self._turn_number
-
-    def add_minion(self, minion: Minion) -> None:
-        if minion in self.minions:
+    def add_minion(self, player: Player, minion: Minion) -> None:
+        if minion in self.minions[player]:
             raise ValueError("Minion already on field")
-        self.minions.append(minion)
+        self.minions[player].append(minion)
 
     def remove_minion(self, minion: Minion) -> None:
-        self.minions.remove(minion)
-
-    def advance_turn(self):
-        """Move play to the next player and return that player."""
-        if self._is_over:
-            raise RuntimeError("Cannot advance a game that has ended.")
-        if not self._players:
-            raise RuntimeError("Cannot advance a game with no players.")
-
-        self._current_player_index += 1
-        if self._current_player_index == len(self._players):
-            self._current_player_index = 0
-            self._turn_number += 1
-        return self.current_player
+        for minions in self.minions.values():
+            if minion in minions:
+                minions.remove(minion)
 
