@@ -22,6 +22,7 @@ def main() -> int:
         for minion in minions:
             print(f"{minion.name}: HP {minion.currentHp}")
 
+    game.player1.calculate_damage(20, game)
 
     return 0
 
